@@ -70,8 +70,3 @@ func Disadvantage() int {
 
 	return roll2
 }
-
-// Inspiration returns the result of a D20 roll with inspiration.
-func Inspiration() int {
-	return Advantage()
-}
