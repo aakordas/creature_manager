@@ -39,3 +39,32 @@ func D20() int {
 func D100() int {
 	return rand.Intn(100) + 1
 }
+
+// Advantage returns the result of a D20 roll with advantage.
+func Advantage() int {
+	roll1 := D20()
+	roll2 := D20()
+
+	if roll1 > roll2 {
+		return roll1
+	}
+
+	return roll2
+}
+
+// Disadvantage returns the result of a D20 roll with disadvantage.
+func Disadvantage() int {
+	roll1 := D20()
+	roll2 := D20()
+
+	if roll1 < roll2 {
+		return roll1
+	}
+
+	return roll2
+}
+
+// Inspiration returns the result of a D20 roll with inspiration.
+func Inspiration() int {
+	return Advantage()
+}
