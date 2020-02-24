@@ -2,8 +2,8 @@ package abilities
 
 // ability holds the value of an ability and a description.
 type ability struct {
-	value       int    `json:"value"`
-	description string `json:"string"`
+	Value       int    `json:"value"`
+	Description string `json:"string"`
 }
 
 // Abilities indicates a creature's basic abilities.
@@ -92,8 +92,8 @@ func outOfRange(v int) bool {
 
 // setAbility sets the ability fields of an Ability.
 func (a *ability) setAbility(v int, d string) {
-	a.value = v
-	a.description = d
+	a.Value = v
+	a.Description = d
 }
 
 type outOfRangeError struct {
