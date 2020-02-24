@@ -1,6 +1,13 @@
 package dice
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
+
+func init() {
+	rand.Seed(time.Now().Unix())
+}
 
 // Dice models a dice. A function that returns some number.
 type Dice func() int
