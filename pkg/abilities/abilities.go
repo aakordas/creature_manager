@@ -63,7 +63,7 @@ var abilityScoresAndModifiers = map[int]int{
 	30: 10,
 }
 
-// Ability indicates an ability in an enum.
+// Ability indicates the type of an ability.
 type Ability string
 
 const (

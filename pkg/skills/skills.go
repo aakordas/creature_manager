@@ -11,7 +11,7 @@ type skill struct {
 	Description string            `json:"description"`
 }
 
-// Skill indicates a skill in an enum.
+// Skill indicates the type of a skill.
 type Skill string
 
 const (
