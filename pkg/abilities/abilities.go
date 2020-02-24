@@ -63,6 +63,24 @@ var abilityScoresAndModifiers = map[int]int{
 	30: 10,
 }
 
+// Ability indicates an ability in an enum.
+type Ability string
+
+const (
+	// Strength means the StrengthModifier has to used.
+	Strength = "strength"
+	// Dexterity means the DexterityModifier has to be used.
+	Dexterity = "dexterity"
+	// Constitution means the ConstitutionModifier has to be used.
+	Constitution = "constitution"
+	// Intelligence means the IntelligenceModifier has to be used.
+	Intelligence = "intelligence"
+	// Wisdom means the WisdomModifier has to be used.
+	Wisdom = "wisdom"
+	// Charisma means the CharismaModifier has to be used.
+	Charisma = "charisma"
+)
+
 // outOfRange checks whether the provided value is withing the acceptable range.
 func outOfRange(v int) bool {
 	if v >= minimumAbilityScore && v <= maximumAbilityScore {
