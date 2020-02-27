@@ -15,7 +15,7 @@ type rollResponse struct {
 	Result int `json:"result"` // The result of the rolling.
 }
 
-type rollErrorResponse struct {
+type errorResponse struct {
 	Error        string `json:"error"`
 	ErrorMessage string `json:"error_message"`
 }
@@ -133,7 +133,7 @@ func response(w http.ResponseWriter, s, c int) {
 	result := rollDice(s, c)
 	enc := json.NewEncoder(w)
 	if result == 0 {
-		errorResponse := rollErrorResponse{"invalid sides", "The dice requested is not available."}
+		errorResponse := errorResponse{"invalid sides", "The dice requested is not available."}
 		jsonEncode(w, enc, errorResponse)
 		return
 	}
