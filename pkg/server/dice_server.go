@@ -2,12 +2,16 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/aakordas/creature_manager/pkg/dice"
 	"github.com/gorilla/mux"
 )
+
+// TODO: Make the responses get formed in a go routine, instead of everything
+// staying in the main server.
 
 // TODO: Testing for the functions that accept ResponseWriters and Requests.
 
@@ -31,6 +35,7 @@ func writeHeader(w http.ResponseWriter) {
 // jsonEncode wraps the json.Encoder.Encode and error checking.
 func jsonEncode(w http.ResponseWriter, enc *json.Encoder, v interface{}) {
 	if err := enc.Encode(v); err != nil {
+		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -78,6 +83,7 @@ func getCount(count string) int {
 }
 
 func unexpectedError(w http.ResponseWriter) {
+	// TODO: Add some logging here, too?
 	http.Error(
 		w,
 		"The server might have encountered an error. Please try again.",
