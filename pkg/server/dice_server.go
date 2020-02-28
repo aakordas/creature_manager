@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TODO: Testing for the functions that accept ResponseWriters and Requests.
+
 type rollResponse struct {
 	Count  int `json:"count"`  // The number of dice that got rolled.
 	Sides  int `json:"sides"`  // The number of sides each dice had.
