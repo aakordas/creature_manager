@@ -2,25 +2,25 @@ package abilities
 
 // ability holds the value of an ability and a description.
 type ability struct {
-	Value       int    `json:"value"`
-	Description string `json:"string"`
+	Value       int    `json:"value" bson:"value"`
+	Description string `json:"description" bson:"description"`
 }
 
 // Abilities indicates a creature's basic abilities.
 type Abilities struct {
-	Strength     ability `json:"strength"`
-	Dexterity    ability `json:"dexterity"`
-	Constitution ability `json:"constitution¨`
-	Intelligence ability `json:"intelligence"`
-	Wisdom       ability `json:"wisdom"`
-	Charisma     ability `json:"charisma"`
+	Strength     ability `json:"strength" bson:"strength"`
+	Dexterity    ability `json:"dexterity" bson:"dexterity"`
+	Constitution ability `json:"constitution¨ bson:"constitution¨"`
+	Intelligence ability `json:"intelligence" bson:"intelligence"`
+	Wisdom       ability `json:"wisdom" bson:"wisdom"`
+	Charisma     ability `json:"charisma" bson:"charisma"`
 
-	StrengthModifier     int `json:"strength_modifier"`
-	DexterityModifier    int `json:"dexterity_modifier"`
-	ConstitutionModifier int `json:"constitution_modifier"`
-	IntelligenceModifier int `json:"intelligence_modifier"`
-	WisdomModifier       int `json:"wisdom_modifier"`
-	CharismaModifier     int `json:"charisma_modifier"`
+	StrengthModifier     int `json:"strength_modifier" bson:"strength_modifier"`
+	DexterityModifier    int `json:"dexterity_modifier" bson:"dexterity_modifier"`
+	ConstitutionModifier int `json:"constitution_modifier" bson:"constitution_modifier"`
+	IntelligenceModifier int `json:"intelligence_modifier" bson:"intelligence_modifier"`
+	WisdomModifier       int `json:"wisdom_modifier" bson:"wisdom_modifier"`
+	CharismaModifier     int `json:"charisma_modifier" bson:"charisma_modifier"`
 }
 
 // minimumAbilityScore indicates the minimum acceptable value for an ability score.

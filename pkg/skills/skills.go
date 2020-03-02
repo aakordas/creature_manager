@@ -6,9 +6,9 @@ import "github.com/aakordas/creature_manager/pkg/abilities"
 // not, the respective modifier that will be used if proficient is true and a
 // description.
 type skill struct {
-	Value       int               `json:"value"`
-	Modifier    abilities.Ability `json:"modifier"` // The ability of which the modifier will be used, if the creature is proficient.
-	Description string            `json:"description"`
+	Value       int               `json:"value" bson:"value"`
+	Modifier    abilities.Ability `json:"modifier" bson:"modifier"` // The ability of which the modifier will be used, if the creature is proficient.
+	Description string            `json:"description" bson:"description"`
 }
 
 // Skill indicates the type of a skill.

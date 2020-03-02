@@ -12,14 +12,14 @@ import (
 // TODO: Testing for the functions that accept ResponseWriters and Requests.
 
 type rollResponse struct {
-	Count  int `json:"count"`  // The number of dice that got rolled.
-	Sides  int `json:"sides"`  // The number of sides each dice had.
-	Result int `json:"result"` // The result of the rolling.
+	Count  int `json:"count" bson:"count"`   // The number of dice that got rolled.
+	Sides  int `json:"sides" bson:"sides"`   // The number of sides each dice had.
+	Result int `json:"result" bson:"result"` // The result of the rolling.
 }
 
 type errorResponse struct {
-	Error        string `json:"error"`
-	ErrorMessage string `json:"error_message"`
+	Error        string `json:"error" bson:"error"`
+	ErrorMessage string `json:"error_message" bson:"error_message"`
 }
 
 // writeHeader writes the header of a valid response.
