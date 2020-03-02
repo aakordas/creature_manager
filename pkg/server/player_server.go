@@ -24,6 +24,13 @@ var (
 
 	database = "creatures"
 	players  = "players"
+
+	contextTimeout = 5 * time.Second
+)
+
+const (
+	serverError   = "server error"
+	databaseError = "database error"
 )
 
 // Connect initializes the interface and connects an application to the provided
@@ -52,6 +59,12 @@ func Disconnect() {
 	}
 }
 
+// sendErrorResponse creates and sends a custom error response.
+func sendErrorResponse(w http.ResponseWriter, enc *json.Encoder, s, l string) {
+	response := &errorResponse{s, l}
+	jsonEncode(w, enc, response)
+}
+
 // AddPlayer is the handler that creates new players in the database.
 func AddPlayer(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -61,10 +74,9 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	writeHeader(w)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 
 	playersCollection := playersDatabase.Collection(players)
@@ -77,21 +89,17 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 	// Can this even happen?
 	if findResult == nil {
 		log.Println("Error in FindOne")
-		response := &errorResponse{
-			"database error",
-			"An error was encountered while accessing the database.",
-		}
-		jsonEncode(w, enc, response)
+		sendErrorResponse(w, enc, databaseError,
+			"An error was encountered while accessing the database",
+		)
 		return
 	}
 
-	err := findResult.Err()
-	if err != mongo.ErrNoDocuments {
-		response := &errorResponse{
+	if findResult.Err() != mongo.ErrNoDocuments {
+		sendErrorResponse(w, enc,
 			"player exists",
 			"A player with the provided name already exists in the database.",
-		}
-		jsonEncode(w, enc, response)
+		)
 		return
 	}
 
@@ -100,19 +108,60 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 	entry, err := bson.Marshal(creature.Creature{Name: playerName})
 	if err != nil {
 		log.Println(err)
-		response := &errorResponse{
-			"server error",
+		sendErrorResponse(w, enc, serverError,
 			"An error was encountered while processing the request.",
-		}
-		jsonEncode(w, enc, response)
+		)
 	}
 	_, err = playersCollection.InsertOne(ctx, entry)
 	if err != nil {
 		log.Println(err)
-		response := &errorResponse{
-			"database error",
-			"There was an error inserting the new entry in the database.",
-		}
-		jsonEncode(w, enc, response)
+		sendErrorResponse(w, enc, databaseError,
+			"There was an error inserting the new entry in the database",
+		)
 	}
+}
+
+// emptyResponse models a response with an empty object.
+type emptyResponse struct {
+}
+
+// GetPlayer is the handler that returns the information about a player in the
+// database.
+func GetPlayer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	playerName := vars["player"]
+	if playerName == "" {
+		unexpectedError(w)
+		return
+	}
+
+	writeHeader(w)
+
+	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancel()
+
+	playersCollection := playersDatabase.Collection(players)
+
+	enc := json.NewEncoder(w)
+	findResult := playersCollection.FindOne(ctx, bson.M{
+		"name": playerName,
+	})
+	// Can this even happen?
+	if findResult == nil {
+		log.Println("Error in FindOne")
+		sendErrorResponse(w, enc, databaseError,
+			"An error was encountered while accessing the database",
+		)
+		return
+	}
+
+	var response creature.Creature
+	err := findResult.Decode(&response)
+	// If no player with such name was found, return an empty object.
+	if err != nil {
+		jsonEncode(w, enc, emptyResponse{})
+		return
+	}
+
+	jsonEncode(w, enc, response)
 }

@@ -39,7 +39,9 @@ func main() {
 	// Player
 	add := api.PathPrefix("/add/").Subrouter()
 	add.HandleFunc("/player/{player:[a-zA-Z ]+}", server.AddPlayer).Methods("PUT")
-	// api.HandleFunc("/player/{player:[a-zA-Z ]+}", server.Player)
+
+	get := api.PathPrefix("/get/").Subrouter()
+	get.HandleFunc("/player/{player:[a-zA-Z ]+}", server.GetPlayer)
 
 	srv := &http.Server{
 		Handler:      r,
