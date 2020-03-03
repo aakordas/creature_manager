@@ -9,7 +9,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var address = "127.0.0.1:8080"
+// #A TODO: Add some flag to set the host for the API and the database.
+
+var (
+	address = "127.0.0.1:8080"
+
+	sides  = "{sides:[0-9]+}"
+	dsides = "{sides:[d|D][0-9]+}"
+	count  = "{count:[0-9]+}"
+)
 
 func main() {
 	r := mux.NewRouter()
