@@ -14,8 +14,15 @@ import (
 // #C TODO: If the Mongo driver fails to connect to the Mongo daemon, provide
 // only roll functionality.
 
-var address = "127.0.0.1:8080"
-var databaseAddress = "mongodb://127.0.0.1:27017" // MongoDB's default port.
+var (
+	address         = "127.0.0.1:8080"
+	databaseAddress = "mongodb://127.0.0.1:27017" // MongoDB's default port.
+
+	sides  = "{sides:[0-9]+}"
+	dsides = "{sides:[d|D][0-9]+}"
+	count  = "{count:[0-9]+}"
+	name   = "{name:[a-zA-Z ]+}"
+)
 
 func main() {
 	server.Connect(databaseAddress)
@@ -27,21 +34,20 @@ func main() {
 
 	// Rolls
 	api.HandleFunc("/roll", server.Roll)
-	api.Queries("sides", "{sides:[0-9]+}", "count", "{count:[0-9]+}").HandlerFunc(server.Roll)
+	api.Queries("sides", sides, "count", count).HandlerFunc(server.Roll)
 
 	roll := api.PathPrefix("/roll/").Subrouter()
-	roll.HandleFunc("/{sides:[d|D][0-9]+}", server.RollN)
+	roll.HandleFunc("/"+dsides, server.RollN)
 
-	dRoll := roll.PathPrefix("/{sides:[d|D][0-9]+}/").Subrouter()
-	dRoll.HandleFunc("/{count:[0-9]+}", server.DRollN)
-	dRoll.Queries("count", "{count:[0-9]+}").HandlerFunc(server.RollN)
+	dRoll := roll.PathPrefix("/" + dsides + "/").Subrouter()
+	dRoll.HandleFunc("/"+count, server.DRollN)
+	dRoll.Queries("count", count).HandlerFunc(server.RollN)
 
 	// Player
-	add := api.PathPrefix("/add/").Subrouter()
-	add.HandleFunc("/player/{player:[a-zA-Z ]+}", server.AddPlayer).Methods("PUT")
-
-	get := api.PathPrefix("/get/").Subrouter()
-	get.HandleFunc("/player/{player:[a-zA-Z ]+}", server.GetPlayer)
+	player := api.PathPrefix("/player").Subrouter()
+	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
+	player.Queries("name", name).HandlerFunc(server.AddPlayer).Methods("PUT")
+	player.Queries("name", name).HandlerFunc(server.GetPlayer)
 
 	srv := &http.Server{
 		Handler:      r,
