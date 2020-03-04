@@ -1,19 +1,13 @@
 package abilities
 
-// ability holds the value of an ability and a description.
-type ability struct {
-	Value       int    `json:"value" bson:"value"`
-	Description string `json:"description" bson:"description"`
-}
-
 // Abilities indicates a creature's basic abilities.
 type Abilities struct {
-	Strength     ability `json:"strength" bson:"strength"`
-	Dexterity    ability `json:"dexterity" bson:"dexterity"`
-	Constitution ability `json:"constitution¨ bson:"constitution¨"`
-	Intelligence ability `json:"intelligence" bson:"intelligence"`
-	Wisdom       ability `json:"wisdom" bson:"wisdom"`
-	Charisma     ability `json:"charisma" bson:"charisma"`
+	Strength     int `json:"strength" bson:"strength"`
+	Dexterity    int `json:"dexterity" bson:"dexterity"`
+	Constitution int `json:"constitution¨ bson:"constitution¨"`
+	Intelligence int `json:"intelligence" bson:"intelligence"`
+	Wisdom       int `json:"wisdom" bson:"wisdom"`
+	Charisma     int `json:"charisma" bson:"charisma"`
 
 	StrengthModifier     int `json:"strength_modifier" bson:"strength_modifier"`
 	DexterityModifier    int `json:"dexterity_modifier" bson:"dexterity_modifier"`
@@ -90,12 +84,6 @@ func outOfRange(v int) bool {
 	return true
 }
 
-// setAbility sets the ability fields of an Ability.
-func (a *ability) setAbility(v int, d string) {
-	a.Value = v
-	a.Description = d
-}
-
 type outOfRangeError struct {
 	value int // The value that caused the error.
 }
@@ -110,10 +98,7 @@ func (a *Abilities) SetStrength(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Strength.setAbility(
-		v,
-		"Strength measures the physical power of a creature.",
-	)
+	a.Strength = v
 	a.StrengthModifier = abilityScoresAndModifiers[v]
 
 	return nil
@@ -125,10 +110,7 @@ func (a *Abilities) SetDexterity(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Dexterity.setAbility(
-		v,
-		"Dexterity measures the agility of a creature.",
-	)
+	a.Dexterity = v
 	a.DexterityModifier = abilityScoresAndModifiers[v]
 
 	return nil
@@ -140,10 +122,7 @@ func (a *Abilities) SetConstitution(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Constitution.setAbility(
-		v,
-		"Constitution measures the endurance of a creature.",
-	)
+	a.Constitution = v
 	a.ConstitutionModifier = abilityScoresAndModifiers[v]
 
 	return nil
@@ -155,10 +134,7 @@ func (a *Abilities) SetIntelligence(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Intelligence.setAbility(
-		v,
-		"Intelligence measures the reasoning and the memory capacity of a creature.",
-	)
+	a.Intelligence = v
 	a.IntelligenceModifier = abilityScoresAndModifiers[v]
 
 	return nil
@@ -170,10 +146,7 @@ func (a *Abilities) SetWisdom(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Wisdom.setAbility(
-		v,
-		"Wisdom measures the perception and the insight of a creature.",
-	)
+	a.Wisdom = v
 	a.WisdomModifier = abilityScoresAndModifiers[v]
 
 	return nil
@@ -185,10 +158,7 @@ func (a *Abilities) SetCharisma(v int) error {
 		return outOfRangeError{v}
 	}
 
-	a.Charisma.setAbility(
-		v,
-		"Charisma measures the force of personality of a creature.",
-	)
+	a.Charisma = v
 	a.CharismaModifier = abilityScoresAndModifiers[v]
 
 	return nil
