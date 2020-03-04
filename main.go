@@ -50,6 +50,7 @@ func main() {
 	player.HandleFunc("/"+name, server.GetPlayer)
 
 	player.HandleFunc("/"+name+"/hitpoints/"+number, server.SetHitPoints).Methods("PUT")
+	player.HandleFunc("/"+name+"/level/"+number, server.SetLevel).Methods("PUT")
 
 	// Player's abilities
 	player.HandleFunc("/"+name+"/abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")

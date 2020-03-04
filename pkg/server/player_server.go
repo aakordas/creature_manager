@@ -338,9 +338,8 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// SetHitPoints is the handler that sets the hitpoints of the requested creature
-// to the provided value.
-func SetHitPoints(w http.ResponseWriter, r *http.Request) {
+// setCreatureAttribute sets the provided attribute to the provided value.
+func setCreatureAttribute(w http.ResponseWriter, r *http.Request, query bson.M) {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 
@@ -348,17 +347,7 @@ func SetHitPoints(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
-			http.StatusBadRequest,
-		)
-		return
-	}
-	v := vars["number"]
-	value, err := strconv.Atoi(v)
-	if err != nil {
-		sendErrorResponse(w, enc,
-			"invalid hitpoints value",
-			"Please provide a valid value for the hitpoints.",
+			"A player's name should contain only characteres and spaces.",
 			http.StatusBadRequest,
 		)
 		return
@@ -384,12 +373,11 @@ func SetHitPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = playersCollection.UpdateOne(ctx, bson.M{
+	_, err := playersCollection.UpdateOne(ctx, bson.M{
 		"name": playerName,
 	}, bson.M{
-		"$set": bson.M{
-			"hitpoints": value,
-		}})
+		"$set": query,
+	})
 	if err != nil {
 		log.Println(err)
 		sendErrorResponse(w, enc, databaseError,
@@ -400,4 +388,47 @@ func SetHitPoints(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// SetHitPoints is the handler that sets the hitpoints of the requested creature
+// to the provided value.
+func SetHitPoints(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	v := vars["number"]
+	value, err := strconv.Atoi(v)
+	if err != nil {
+		sendErrorResponse(
+			w,
+			json.NewEncoder(w),
+			"invalid value",
+			"Please provide a valid numeric value.",
+			http.StatusBadRequest,
+		)
+	}
+
+	setCreatureAttribute(w, r, bson.M{
+		"hitpoints": value,
+	})
+}
+
+// SetLevel is the handler that sets the hitpoints of the requested creature to
+// the provided value.
+func SetLevel(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	v := vars["number"]
+	value, err := strconv.Atoi(v)
+	if err != nil {
+		sendErrorResponse(
+			w,
+			json.NewEncoder(w),
+			"invalid value",
+			"Please provide a valid numeric value.",
+			http.StatusBadRequest,
+		)
+	}
+
+	setCreatureAttribute(w, r, bson.M{
+		"level":             value,
+		"proficiency_bonus": creature.ProficiencyBonusPerLevel[value],
+	})
 }
