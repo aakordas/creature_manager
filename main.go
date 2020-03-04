@@ -47,6 +47,7 @@ func main() {
 	player := api.PathPrefix("/player").Subrouter()
 	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
 	player.Queries("name", name).HandlerFunc(server.AddPlayer).Methods("PUT")
+	player.HandleFunc("/"+name, server.GetPlayer)
 	player.Queries("name", name).HandlerFunc(server.GetPlayer)
 
 	srv := &http.Server{
