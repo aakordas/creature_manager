@@ -47,15 +47,13 @@ func main() {
 	// Player
 	player := api.PathPrefix("/player").Subrouter()
 	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
-	player.Queries("name", name).HandlerFunc(server.AddPlayer).Methods("PUT")
 	player.HandleFunc("/"+name, server.GetPlayer)
-	player.Queries("name", name).HandlerFunc(server.GetPlayer)
 
 	player.HandleFunc("/"+name+"/hitpoints/"+number, server.SetHitPoints).Methods("PUT")
 
 	// Player's abilities
-	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
 	player.HandleFunc("/"+name+"/abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
+	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
 
 	srv := &http.Server{
 		Handler:      r,
