@@ -432,3 +432,24 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 		"proficiency_bonus": creature.ProficiencyBonusPerLevel[value],
 	})
 }
+
+// SetArmorClass is the handler that sets the armor class of the requested
+// creature to the provided value.
+func SetArmorClass(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	v := vars["number"]
+	value, err := strconv.Atoi(v)
+	if err != nil {
+		sendErrorResponse(
+			w,
+			json.NewEncoder(w),
+			"invalid value",
+			"Please provide a valid numeric value.",
+			http.StatusBadRequest,
+		)
+	}
+
+	setCreatureAttribute(w, r, bson.M{
+		"armor_class": value,
+	})
+}
