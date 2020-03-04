@@ -51,6 +51,12 @@ func main() {
 	player.HandleFunc("/"+name, server.GetPlayer)
 	player.Queries("name", name).HandlerFunc(server.GetPlayer)
 
+	player.HandleFunc("/"+name+"/hitpoints/"+number, server.SetHitPoints).Methods("PUT")
+
+	// Player's abilities
+	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
+	player.HandleFunc("/"+name+"/abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
+
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         address,
