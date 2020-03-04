@@ -87,7 +87,7 @@ func unexpectedError(w http.ResponseWriter) {
 
 // Roll is the handler for all the requested rolls of one die.
 func Roll(w http.ResponseWriter, r *http.Request) {
-	sides := r.FormValue("sides")
+	sides := r.FormValue("number")
 	count := r.FormValue("count")
 
 	s := getSides(sides)
@@ -130,7 +130,8 @@ func chooseDice(sides int) dice.Dice {
 
 // response deals with the response part of the HTTP response, whether that is an error response or not.
 func response(w http.ResponseWriter, s, c int) {
-	writeHeader(w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	result := rollDice(s, c)
 	enc := json.NewEncoder(w)

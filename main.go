@@ -18,10 +18,11 @@ var (
 	address         = "127.0.0.1:8080"
 	databaseAddress = "mongodb://127.0.0.1:27017" // MongoDB's default port.
 
-	sides  = "{sides:[0-9]+}"
-	dsides = "{sides:[d|D][0-9]+}"
-	count  = "{count:[0-9]+}"
-	name   = "{name:[a-zA-Z ]+}"
+	number  = "{number:[0-9]+}"
+	dsides  = "{sides:[d|D][0-9]+}"
+	count   = "{count:[0-9]+}"
+	name    = "{name:[a-zA-Z ]+}"
+	ability = "{ability:[a-zA-Z]+}"
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 
 	// Rolls
 	api.HandleFunc("/roll", server.Roll)
-	api.Queries("sides", sides, "count", count).HandlerFunc(server.Roll)
+	api.Queries("sides", number, "count", count).HandlerFunc(server.Roll)
 
 	roll := api.PathPrefix("/roll/").Subrouter()
 	roll.HandleFunc("/"+dsides, server.RollN)
