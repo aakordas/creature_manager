@@ -23,8 +23,8 @@ const minimumAbilityScore = 1
 // maximumAbilityScore indicates the maximum acceptable value for an ability score.
 const maximumAbilityScore = 30
 
-// abilityScoresAndModifiers maps an ability score to an ability modifier.
-var abilityScoresAndModifiers = map[int]int{
+// AbilityScoresAndModifiers maps an ability score to an ability modifier.
+var AbilityScoresAndModifiers = map[int]int{
 	1:  -5,
 	2:  -4,
 	3:  -4,
@@ -57,9 +57,6 @@ var abilityScoresAndModifiers = map[int]int{
 	30: 10,
 }
 
-// Ability indicates the type of an ability.
-type Ability string
-
 const (
 	// Strength means the StrengthModifier has to used.
 	Strength = "strength"
@@ -75,8 +72,8 @@ const (
 	Charisma = "charisma"
 )
 
-// outOfRange checks whether the provided value is withing the acceptable range.
-func outOfRange(v int) bool {
+// OutOfRange checks whether the provided value is withing the acceptable range.
+func OutOfRange(v int) bool {
 	if v >= minimumAbilityScore && v <= maximumAbilityScore {
 		return false
 	}
@@ -84,82 +81,12 @@ func outOfRange(v int) bool {
 	return true
 }
 
-type outOfRangeError struct {
+// OutOfRangeError is the error that gets returned when an out of range value is
+// provided to a setter.
+type OutOfRangeError struct {
 	value int // The value that caused the error.
 }
 
-func (e outOfRangeError) Error() string {
+func (e OutOfRangeError) Error() string {
 	return "The provided value is out of bounds."
-}
-
-// SetStrength sets the Strength value of a creature.
-func (a *Abilities) SetStrength(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Strength = v
-	a.StrengthModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetDexterity sets the Dexterity value of a creature.
-func (a *Abilities) SetDexterity(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Dexterity = v
-	a.DexterityModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetConstitution sets the Constitution value of a creature.
-func (a *Abilities) SetConstitution(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Constitution = v
-	a.ConstitutionModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetIntelligence sets the Intelligence value of a creature.
-func (a *Abilities) SetIntelligence(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Intelligence = v
-	a.IntelligenceModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetWisdom sets the Wisdom value of a creature.
-func (a *Abilities) SetWisdom(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Wisdom = v
-	a.WisdomModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetCharisma sets the Charisma value of a creature.
-func (a *Abilities) SetCharisma(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Charisma = v
-	a.CharismaModifier = abilityScoresAndModifiers[v]
-
-	return nil
 }
