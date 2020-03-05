@@ -11,6 +11,7 @@ import (
 
 	"github.com/aakordas/creature_manager/pkg/abilities"
 	"github.com/aakordas/creature_manager/pkg/creature"
+	"github.com/aakordas/creature_manager/pkg/skills"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -256,6 +257,19 @@ func validAbility(a string) bool {
 	}
 }
 
+// calculatePassivePerception returns the passive perception of the creature,
+// based on its wisdom and proficiency modifiers
+func calculatePassivePerception(c creature.Creature, w int, pb int) int {
+	modifier := abilities.AbilityScoresAndModifiers[w]
+
+	perceptionProficiency := c.Skills[skills.Perception].Value
+	if perceptionProficiency != nil {
+		return 10 + modifier + pb
+	}
+
+	return 10 + modifier
+}
+
 // SetAbility is the handler that sets the requested ability of a player to
 // the provided value.
 func SetAbility(w http.ResponseWriter, r *http.Request) {
@@ -319,13 +333,25 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var player creature.Creature
+	err = findResult.Decode(&player)
+
+	modifier := abilities.AbilityScoresAndModifiers[value]
+
+	query := bson.M{
+		"abilities." + ability:               value,
+		"abilities." + ability + "_modifier": modifier,
+	}
+
+	if ability == abilities.Wisdom {
+		query["passive_perception"] = calculatePassivePerception(player, value, player.Level)
+	}
+
 	_, err = playersCollection.UpdateOne(ctx, bson.M{
 		"name": playerName,
 	}, bson.M{
-		"$set": bson.M{
-			"abilities." + ability:               value,
-			"abilities." + ability + "_modifier": abilities.AbilityScoresAndModifiers[value],
-		}})
+		"$set": query,
+	})
 	if err != nil {
 		log.Println(err)
 		sendErrorResponse(w, enc, databaseError,
@@ -336,6 +362,28 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// playerExists checks if the player with the provided name exists in the database.
+func playerExists(w http.ResponseWriter, r *http.Request, col *mongo.Collection, playerName string) {
+	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancel()
+
+	enc := json.NewEncoder(w)
+	findResult := findPlayer(ctx, col, playerName)
+	// Can this even happen?
+	if findResult == nil {
+		log.Println("Error in FindOne")
+		sendErrorResponse(w, enc, databaseError,
+			"An error was encountered while accessing the database.",
+			http.StatusInternalServerError,
+		)
+		return
+	} else if findResult.Err() == mongo.ErrNoDocuments {
+		w.WriteHeader(http.StatusNotFound)
+		jsonEncode(w, enc, emptyResponse{})
+		return
+	}
 }
 
 // setCreatureAttribute sets the provided attribute to the provided value.
@@ -358,20 +406,7 @@ func setCreatureAttribute(w http.ResponseWriter, r *http.Request, query bson.M) 
 
 	playersCollection := playersDatabase.Collection(players)
 
-	findResult := findPlayer(ctx, playersCollection, playerName)
-	// Can this even happen?
-	if findResult == nil {
-		log.Println("Error in FindOne")
-		sendErrorResponse(w, enc, databaseError,
-			"An error was encountered while accessing the database.",
-			http.StatusInternalServerError,
-		)
-		return
-	} else if findResult.Err() == mongo.ErrNoDocuments {
-		w.WriteHeader(http.StatusNotFound)
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
+	playerExists(w, r, playersCollection, playerName)
 
 	_, err := playersCollection.UpdateOne(ctx, bson.M{
 		"name": playerName,
@@ -414,6 +449,8 @@ func SetHitPoints(w http.ResponseWriter, r *http.Request) {
 // SetLevel is the handler that sets the hitpoints of the requested creature to
 // the provided value.
 func SetLevel(w http.ResponseWriter, r *http.Request) {
+	enc := json.NewEncoder(w)
+
 	vars := mux.Vars(r)
 	v := vars["number"]
 	value, err := strconv.Atoi(v)
@@ -426,10 +463,42 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 		)
 	}
+	playerName := vars["name"]
+	if playerName == "" {
+		sendErrorResponse(w, enc, invalidPlayerNameError,
+			"A player's name should contain only characters and spaces.",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
+	playersCollection := playersDatabase.Collection(players)
+
+	playerExists(w, r, playersCollection, playerName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancel()
+
+	findResult := findPlayer(ctx, playersCollection, playerName)
+
+	var player creature.Creature
+	err = findResult.Decode(&player)
+	// If no player with such name could be found.
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		jsonEncode(w, enc, emptyResponse{})
+		return
+	}
+
+	proficiencyBonus := creature.ProficiencyBonusPerLevel[value]
 	setCreatureAttribute(w, r, bson.M{
 		"level":             value,
-		"proficiency_bonus": creature.ProficiencyBonusPerLevel[value],
+		"proficiency_bonus": proficiencyBonus,
+		"passive_perception": calculatePassivePerception(
+			player,
+			player.Abilities.Wisdom,
+			proficiencyBonus,
+		),
 	})
 }
 
