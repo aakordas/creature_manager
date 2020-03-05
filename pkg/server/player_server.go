@@ -159,6 +159,19 @@ type emptyResponse struct {
 // GetPlayer is the handler that returns the information about a player in the
 // database.
 func GetPlayer(w http.ResponseWriter, r *http.Request) {
+	player := getPlayer(w, r)
+
+	w.WriteHeader(http.StatusFound)
+	jsonEncode(
+		w,
+		json.NewEncoder(w),
+		player,
+	)
+}
+
+// getPlayer returns a creature.Creature object to fetch its abilities or
+// skills.
+func getPlayer(w http.ResponseWriter, r *http.Request) *creature.Creature {
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 
@@ -169,7 +182,7 @@ func GetPlayer(w http.ResponseWriter, r *http.Request) {
 			"A player's name should contain only characters and spaces.",
 			http.StatusBadRequest,
 		)
-		return
+		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
@@ -180,70 +193,36 @@ func GetPlayer(w http.ResponseWriter, r *http.Request) {
 	findResult := findPlayer(ctx, playersCollection, playerName)
 	// Can this even happen?
 	if findResult == nil {
-		log.Println("Error in FindOne")
-		sendErrorResponse(w, enc, databaseError,
-			"An error was encountered while accessing the database",
+		log.Println(w, enc, databaseError,
+			"An error was encountered while accessing the database.",
 			http.StatusInternalServerError,
 		)
-		return
+		return nil
 	}
 
-	var response creature.Creature
-	err := findResult.Decode(&response)
-	// If no player with such name was found, return an empty object.
+	var player creature.Creature
+	err := findResult.Decode(&player)
+	// If no player was found, return an empty object.
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		jsonEncode(w, enc, emptyResponse{})
-		return
+		return nil
 	}
 
-	w.WriteHeader(http.StatusFound)
-	jsonEncode(w, enc, response)
+	return &player
 }
 
 // GetAbilities is the handler that returns the abilities information of a
 // player in the database.
 func GetAbilities(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
+	player := getPlayer(w, r)
 
-	vars := mux.Vars(r)
-	playerName := vars["name"]
-	if playerName == "" {
-		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
-			http.StatusBadRequest,
-		)
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-	defer cancel()
-
-	playersCollection := playersDatabase.Collection(players)
-
-	findResult := findPlayer(ctx, playersCollection, playerName)
-	// Can this even happen?
-	if findResult == nil {
-		log.Println("Error in FindOne")
-		sendErrorResponse(w, enc, databaseError,
-			"An error was encountered while accsesing the database.",
-			http.StatusInternalServerError,
-		)
-		return
-	}
-
-	var player creature.Creature
-	err := findResult.Decode(&player)
-	// If no player with such name was found, return an empty object.
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
-
-	w.WriteHeader(http.StatusFound)
-	jsonEncode(w, enc, player.Abilities)
+	// w.WriteHeader(http.StatusFound)
+	jsonEncode(
+		w,
+		json.NewEncoder(w),
+		player.Abilities,
+	)
 }
 
 // validAbility checks if the provided value if a valid ability.
@@ -262,7 +241,7 @@ func validAbility(a string) bool {
 func calculatePassivePerception(c creature.Creature, w int, pb int) int {
 	modifier := abilities.AbilityScoresAndModifiers[w]
 
-	perceptionProficiency := c.Skills[skills.Perception].Value
+	perceptionProficiency := c.Skills[skills.Perception]
 	if perceptionProficiency != nil {
 		return 10 + modifier + pb
 	}
@@ -318,23 +297,7 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 
 	playersCollection := playersDatabase.Collection(players)
 
-	findResult := findPlayer(ctx, playersCollection, playerName)
-	// Can this even happen?
-	if findResult == nil {
-		log.Println("Error in FindOne.")
-		sendErrorResponse(w, enc, databaseError,
-			"An error was encountered while accessing the database.",
-			http.StatusInternalServerError,
-		)
-		return
-	} else if findResult.Err() == mongo.ErrNoDocuments {
-		w.WriteHeader(http.StatusNotFound)
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
-
-	var player creature.Creature
-	err = findResult.Decode(&player)
+	player := getPlayer(w, r)
 
 	modifier := abilities.AbilityScoresAndModifiers[value]
 
@@ -344,7 +307,7 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if ability == abilities.Wisdom {
-		query["passive_perception"] = calculatePassivePerception(player, value, player.Level)
+		query["passive_perception"] = calculatePassivePerception(*player, value, player.Level)
 	}
 
 	_, err = playersCollection.UpdateOne(ctx, bson.M{
@@ -472,30 +435,14 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playersCollection := playersDatabase.Collection(players)
-
-	playerExists(w, r, playersCollection, playerName)
-
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-	defer cancel()
-
-	findResult := findPlayer(ctx, playersCollection, playerName)
-
-	var player creature.Creature
-	err = findResult.Decode(&player)
-	// If no player with such name could be found.
-	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
+	player := getPlayer(w, r)
 
 	proficiencyBonus := creature.ProficiencyBonusPerLevel[value]
 	setCreatureAttribute(w, r, bson.M{
 		"level":             value,
 		"proficiency_bonus": proficiencyBonus,
 		"passive_perception": calculatePassivePerception(
-			player,
+			*player,
 			player.Abilities.Wisdom,
 			proficiencyBonus,
 		),
@@ -521,4 +468,21 @@ func SetArmorClass(w http.ResponseWriter, r *http.Request) {
 	setCreatureAttribute(w, r, bson.M{
 		"armor_class": value,
 	})
+}
+
+// GetSkills is the handler that returns the skills information of a player in
+// the database.
+func GetSkills(w http.ResponseWriter, r *http.Request) {
+	player := getPlayer(w, r)
+
+	w.WriteHeader(http.StatusFound)
+	enc := json.NewEncoder(w)
+
+	if player.Skills == nil {
+		jsonEncode(w, enc, emptyResponse{})
+		return
+	}
+
+	jsonEncode(w, enc, player.Skills)
+	return
 }

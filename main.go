@@ -57,6 +57,8 @@ func main() {
 	player.HandleFunc("/"+name+"/abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
 	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
 
+	// Player's skills
+	player.HandleFunc("/"+name+"/skills", server.GetSkills)
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         address,
