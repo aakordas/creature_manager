@@ -11,6 +11,7 @@ import (
 
 	"github.com/aakordas/creature_manager/pkg/abilities"
 	"github.com/aakordas/creature_manager/pkg/creature"
+	"github.com/aakordas/creature_manager/pkg/saves"
 	"github.com/aakordas/creature_manager/pkg/skills"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -647,3 +648,30 @@ func SetSkill(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+// GetSaves is the handler that returns the saving throws information of a
+// player in the database.
+func GetSaves(w http.ResponseWriter, r *http.Request) {
+        enc := json.NewEncoder(w)
+
+        player, err := getPlayer(w, r)
+        if err != nil {
+                sendErrorResponse(w, enc,
+                        "Could not fetch the player.",
+                        "There was an error retrieving the player from the database.",
+                        http.StatusBadRequest,
+                )
+                return
+        }
+
+        w.WriteHeader(http.StatusFound)
+
+        if player.SavingThrows == nil {
+                jsonEncode(w, enc, emptyResponse{})
+                return
+        }
+
+        jsonEncode(w, enc, player.SavingThrows)
+        return
+}
+

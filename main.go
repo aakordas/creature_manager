@@ -12,6 +12,8 @@ import (
 // #A TODO: Create a database index on the player name.
 // #A TODO: Add some flag to set the host for the API and the database.
 
+// #B TODO: Make some subrouter for /{name}/
+
 // #C TODO: If the Mongo driver fails to connect to the Mongo daemon, provide
 // only roll functionality.
 
@@ -25,6 +27,7 @@ var (
 	name    = "{name:[a-zA-Z ]+}"
 	ability = "{ability:[a-zA-Z]+}"
 	skill   = "{skill:[a-zA-Z_]+}"
+	save = "{save:[a-zA-Z]+}"
 )
 
 func main() {
@@ -62,6 +65,9 @@ func main() {
 	// Player's skills
 	player.HandleFunc("/"+name+"/skills/"+skill, server.SetSkill).Methods("PUT")
 	player.HandleFunc("/"+name+"/skills", server.GetSkills)
+
+        // Player's saving throws
+        player.HandleFunc("/"+name+"/saving_throw", server.GetSaves)
 
 	srv := &http.Server{
 		Handler:      r,
