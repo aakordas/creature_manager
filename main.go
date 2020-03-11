@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// #A TODO: Create a database index on the player name.
 // #A TODO: Add some flag to set the host for the API and the database.
 
 // #C TODO: If the Mongo driver fails to connect to the Mongo daemon, provide
@@ -23,6 +24,7 @@ var (
 	count   = "{count:[0-9]+}"
 	name    = "{name:[a-zA-Z ]+}"
 	ability = "{ability:[a-zA-Z]+}"
+	skill   = "{skill:[a-zA-Z_]+}"
 )
 
 func main() {
@@ -58,7 +60,9 @@ func main() {
 	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
 
 	// Player's skills
+	player.HandleFunc("/"+name+"/skills/"+skill, server.SetSkill).Methods("PUT")
 	player.HandleFunc("/"+name+"/skills", server.GetSkills)
+
 	srv := &http.Server{
 		Handler:      r,
 		Addr:         address,

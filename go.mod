@@ -1,6 +1,6 @@
 module github.com/aakordas/creature_manager
 
-go 1.13
+go 1.14
 
 require (
 	github.com/gorilla/mux v1.7.4

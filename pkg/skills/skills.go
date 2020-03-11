@@ -9,9 +9,6 @@ type skill struct {
 	Modifier string `json:"modifier" bson:"modifier"` // The ability of which the modifier will be used, if the creature is proficient.
 }
 
-// Skill indicates the type of a skill.
-type Skill string
-
 const (
 	// Acrobatics means the Acrobatics skill will be added in the proficiency list.
 	Acrobatics = "acrobatics"
@@ -51,8 +48,31 @@ const (
 	Survival = "survival"
 )
 
+// SkillToAbility maps a skill to the ability modifier it needs, when the
+// creature is proficient in it.
+var SkillToAbility = map[string]string{
+	Acrobatics:     abilities.Dexterity,
+	AnimalHandling: abilities.Wisdom,
+	Arcana:         abilities.Intelligence,
+	Athletics:      abilities.Strength,
+	Deception:      abilities.Charisma,
+	History:        abilities.Intelligence,
+	Insight:        abilities.Wisdom,
+	Intimidation:   abilities.Charisma,
+	Investigation:  abilities.Intelligence,
+	Medicine:       abilities.Wisdom,
+	Nature:         abilities.Intelligence,
+	Perception:     abilities.Wisdom,
+	Performance:    abilities.Charisma,
+	Persuasion:     abilities.Charisma,
+	Religion:       abilities.Intelligence,
+	SleightOfHand:  abilities.Dexterity,
+	Stealth:        abilities.Dexterity,
+	Survival:       abilities.Wisdom,
+}
+
 // Skills is the collection of skills the creature is proficient in.
-type Skills map[Skill]*skill
+type Skills map[string]*skill
 
 func (s *skill) addSkill(v int, mod string) {
 	s.Value = v
