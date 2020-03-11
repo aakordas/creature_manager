@@ -67,6 +67,7 @@ func main() {
 	player.HandleFunc("/"+name+"/skills", server.GetSkills)
 
         // Player's saving throws
+        player.HandleFunc("/"+name+"/saving_throw/"+save, server.SetSave).Methods("PUT")
         player.HandleFunc("/"+name+"/saving_throw", server.GetSaves)
 
 	srv := &http.Server{

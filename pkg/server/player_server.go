@@ -675,3 +675,62 @@ func GetSaves(w http.ResponseWriter, r *http.Request) {
         return
 }
 
+// validSave checks if the provided value is a valid saving throw.
+func validSave(s string) bool {
+        switch strings.ToLower(s) {
+        case saves.Strength, saves.Dexterity, saves.Constitution,
+                saves.Intelligence, saves.Wisdom, saves.Charisma:
+                return true
+        default:
+                return false
+        }
+}
+
+// SetSave is the handler that sets the requested saving throw of a player in
+// the database.
+func SetSave(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        enc := json.NewEncoder(w)
+
+        vars := mux.Vars(r)
+        playerName := vars["name"]
+        if playerName == "" {
+                sendErrorResponse(w, enc, invalidPlayerNameError,
+                        "A player's name should contain only characters and spaces.",
+                        http.StatusBadRequest,
+                )
+                return
+        }
+        save := vars["save"]
+        if !validSave(save) {
+                sendErrorResponse(w, enc,
+                        "invalid saving throw name",
+                        "Please provide a valid saving throw name.",
+                        http.StatusBadRequest,
+                )
+                return
+        }
+
+        playersCollection := playersDatabase.Collection(players)
+
+        ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+        defer cancel()
+
+        opts := options.Update().SetUpsert(true)
+        _, err := playersCollection.UpdateOne(ctx, bson.M{
+                "name": playerName,
+        }, bson.M{
+                "$set": bson.M {
+                        "saving_throws." + save: true,
+        }}, opts)
+        if err != nil {
+                log.Println(err)
+                sendErrorResponse(w, enc, databaseError,
+                        "There was an error updating the entry in the database.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }
+
+        w.WriteHeader(http.StatusOK)
+}
