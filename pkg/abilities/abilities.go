@@ -1,26 +1,20 @@
 package abilities
 
-// ability holds the value of an ability and a description.
-type ability struct {
-	Value       int    `json:"value"`
-	Description string `json:"string"`
-}
-
 // Abilities indicates a creature's basic abilities.
 type Abilities struct {
-	Strength     ability `json:"strength"`
-	Dexterity    ability `json:"dexterity"`
-	Constitution ability `json:"constitution¨`
-	Intelligence ability `json:"intelligence"`
-	Wisdom       ability `json:"wisdom"`
-	Charisma     ability `json:"charisma"`
+	Strength     int `json:"strength" bson:"strength"`
+	Dexterity    int `json:"dexterity" bson:"dexterity"`
+	Constitution int `json:"constitution¨ bson:"constitution¨"`
+	Intelligence int `json:"intelligence" bson:"intelligence"`
+	Wisdom       int `json:"wisdom" bson:"wisdom"`
+	Charisma     int `json:"charisma" bson:"charisma"`
 
-	StrengthModifier     int `json:"strength_modifier"`
-	DexterityModifier    int `json:"dexterity_modifier"`
-	ConstitutionModifier int `json:"constitution_modifier"`
-	IntelligenceModifier int `json:"intelligence_modifier"`
-	WisdomModifier       int `json:"wisdom_modifier"`
-	CharismaModifier     int `json:"charisma_modifier"`
+	StrengthModifier     int `json:"strength_modifier" bson:"strength_modifier"`
+	DexterityModifier    int `json:"dexterity_modifier" bson:"dexterity_modifier"`
+	ConstitutionModifier int `json:"constitution_modifier" bson:"constitution_modifier"`
+	IntelligenceModifier int `json:"intelligence_modifier" bson:"intelligence_modifier"`
+	WisdomModifier       int `json:"wisdom_modifier" bson:"wisdom_modifier"`
+	CharismaModifier     int `json:"charisma_modifier" bson:"charisma_modifier"`
 }
 
 // minimumAbilityScore indicates the minimum acceptable value for an ability score.
@@ -29,8 +23,8 @@ const minimumAbilityScore = 1
 // maximumAbilityScore indicates the maximum acceptable value for an ability score.
 const maximumAbilityScore = 30
 
-// abilityScoresAndModifiers maps an ability score to an ability modifier.
-var abilityScoresAndModifiers = map[int]int{
+// AbilityScoresAndModifiers maps an ability score to an ability modifier.
+var AbilityScoresAndModifiers = map[int]int{
 	1:  -5,
 	2:  -4,
 	3:  -4,
@@ -63,9 +57,6 @@ var abilityScoresAndModifiers = map[int]int{
 	30: 10,
 }
 
-// Ability indicates the type of an ability.
-type Ability string
-
 const (
 	// Strength means the StrengthModifier has to used.
 	Strength = "strength"
@@ -81,8 +72,8 @@ const (
 	Charisma = "charisma"
 )
 
-// outOfRange checks whether the provided value is withing the acceptable range.
-func outOfRange(v int) bool {
+// OutOfRange checks whether the provided value is withing the acceptable range.
+func OutOfRange(v int) bool {
 	if v >= minimumAbilityScore && v <= maximumAbilityScore {
 		return false
 	}
@@ -90,106 +81,12 @@ func outOfRange(v int) bool {
 	return true
 }
 
-// setAbility sets the ability fields of an Ability.
-func (a *ability) setAbility(v int, d string) {
-	a.Value = v
-	a.Description = d
-}
-
-type outOfRangeError struct {
+// OutOfRangeError is the error that gets returned when an out of range value is
+// provided to a setter.
+type OutOfRangeError struct {
 	value int // The value that caused the error.
 }
 
-func (e outOfRangeError) Error() string {
+func (e OutOfRangeError) Error() string {
 	return "The provided value is out of bounds."
-}
-
-// SetStrength sets the Strength value of a creature.
-func (a *Abilities) SetStrength(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Strength.setAbility(
-		v,
-		"Strength measures the physical power of a creature.",
-	)
-	a.StrengthModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetDexterity sets the Dexterity value of a creature.
-func (a *Abilities) SetDexterity(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Dexterity.setAbility(
-		v,
-		"Dexterity measures the agility of a creature.",
-	)
-	a.DexterityModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetConstitution sets the Constitution value of a creature.
-func (a *Abilities) SetConstitution(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Constitution.setAbility(
-		v,
-		"Constitution measures the endurance of a creature.",
-	)
-	a.ConstitutionModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetIntelligence sets the Intelligence value of a creature.
-func (a *Abilities) SetIntelligence(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Intelligence.setAbility(
-		v,
-		"Intelligence measures the reasoning and the memory capacity of a creature.",
-	)
-	a.IntelligenceModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetWisdom sets the Wisdom value of a creature.
-func (a *Abilities) SetWisdom(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Wisdom.setAbility(
-		v,
-		"Wisdom measures the perception and the insight of a creature.",
-	)
-	a.WisdomModifier = abilityScoresAndModifiers[v]
-
-	return nil
-}
-
-// SetCharisma sets the Charisma value of a creature.
-func (a *Abilities) SetCharisma(v int) error {
-	if outOfRange(v) {
-		return outOfRangeError{v}
-	}
-
-	a.Charisma.setAbility(
-		v,
-		"Charisma measures the force of personality of a creature.",
-	)
-	a.CharismaModifier = abilityScoresAndModifiers[v]
-
-	return nil
 }

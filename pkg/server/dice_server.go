@@ -16,14 +16,14 @@ import (
 // TODO: Testing for the functions that accept ResponseWriters and Requests.
 
 type rollResponse struct {
-	Count  int `json:"count"`  // The number of dice that got rolled.
-	Sides  int `json:"sides"`  // The number of sides each dice had.
-	Result int `json:"result"` // The result of the rolling.
+	Count  int `json:"count" bson:"count"`   // The number of dice that got rolled.
+	Sides  int `json:"sides" bson:"sides"`   // The number of sides each dice had.
+	Result int `json:"result" bson:"result"` // The result of the rolling.
 }
 
 type errorResponse struct {
-	Error        string `json:"error"`
-	ErrorMessage string `json:"error_message"`
+	Error        string `json:"error" bson:"error"`
+	ErrorMessage string `json:"error_message" bson:"error_message"`
 }
 
 // writeHeader writes the header of a valid response.
@@ -93,7 +93,7 @@ func unexpectedError(w http.ResponseWriter) {
 
 // Roll is the handler for all the requested rolls of one die.
 func Roll(w http.ResponseWriter, r *http.Request) {
-	sides := r.FormValue("sides")
+	sides := r.FormValue("number")
 	count := r.FormValue("count")
 
 	s := getSides(sides)
@@ -136,7 +136,8 @@ func chooseDice(sides int) dice.Dice {
 
 // response deals with the response part of the HTTP response, whether that is an error response or not.
 func response(w http.ResponseWriter, s, c int) {
-	writeHeader(w)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
 	result := rollDice(s, c)
 	enc := json.NewEncoder(w)
