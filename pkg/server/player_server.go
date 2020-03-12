@@ -164,11 +164,6 @@ func getInfo(w http.ResponseWriter, r *http.Request, v interface{}) {
 
 	player, err := getPlayer(w, r)
 	if err != nil {
-		sendErrorResponse(w, enc,
-			"Could not fetch the player",
-			"There was an error retrieving the player from the database.",
-			http.StatusBadRequest,
-		)
 		return
 	}
 
