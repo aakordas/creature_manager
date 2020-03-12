@@ -4,7 +4,7 @@ package abilities
 type Abilities struct {
 	Strength     int `json:"strength" bson:"strength"`
 	Dexterity    int `json:"dexterity" bson:"dexterity"`
-	Constitution int `json:"constitution¨ bson:"constitution¨"`
+	Constitution int `json:"constitution" bson:"constitution"`
 	Intelligence int `json:"intelligence" bson:"intelligence"`
 	Wisdom       int `json:"wisdom" bson:"wisdom"`
 	Charisma     int `json:"charisma" bson:"charisma"`
