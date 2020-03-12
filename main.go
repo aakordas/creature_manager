@@ -27,7 +27,7 @@ var (
 	name    = "{name:[a-zA-Z ]+}"
 	ability = "{ability:[a-zA-Z]+}"
 	skill   = "{skill:[a-zA-Z_]+}"
-	save = "{save:[a-zA-Z]+}"
+	save    = "{save:[a-zA-Z]+}"
 )
 
 func main() {
@@ -54,8 +54,8 @@ func main() {
 	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
 	player.HandleFunc("/"+name, server.GetPlayer)
 
-        // Cannot (?) create subrouters with variables, like `name'.
-        playerName := "/"+name+"/"
+	// Cannot (?) create subrouters with variables, like `name'.
+	playerName := "/" + name + "/"
 	player.HandleFunc(playerName+"hitpoints/"+number, server.SetHitPoints).Methods("PUT")
 	player.HandleFunc(playerName+"level/"+number, server.SetLevel).Methods("PUT")
 	player.HandleFunc(playerName+"armor/"+number, server.SetArmorClass).Methods("PUT")
@@ -68,9 +68,9 @@ func main() {
 	player.HandleFunc(playerName+"skills/"+skill, server.SetSkill).Methods("PUT")
 	player.HandleFunc(playerName+"skills", server.GetSkills)
 
-        // Player's saving throws
-        player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods("PUT")
-        player.HandleFunc(playerName+"saving_throw", server.GetSaves)
+	// Player's saving throws
+	player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods("PUT")
+	player.HandleFunc(playerName+"saving_throw", server.GetSaves)
 
 	srv := &http.Server{
 		Handler:      r,

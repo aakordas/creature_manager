@@ -73,4 +73,3 @@ var SkillToAbility = map[string]string{
 
 // Skills is the collection of skills the creature is proficient in.
 type Skills map[string]*skill
-
