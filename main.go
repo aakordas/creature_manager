@@ -54,21 +54,23 @@ func main() {
 	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
 	player.HandleFunc("/"+name, server.GetPlayer)
 
-	player.HandleFunc("/"+name+"/hitpoints/"+number, server.SetHitPoints).Methods("PUT")
-	player.HandleFunc("/"+name+"/level/"+number, server.SetLevel).Methods("PUT")
-	player.HandleFunc("/"+name+"/armor/"+number, server.SetArmorClass).Methods("PUT")
+        // Cannot (?) create subrouters with variables, like `name'.
+        playerName := "/"+name+"/"
+	player.HandleFunc(playerName+"hitpoints/"+number, server.SetHitPoints).Methods("PUT")
+	player.HandleFunc(playerName+"level/"+number, server.SetLevel).Methods("PUT")
+	player.HandleFunc(playerName+"armor/"+number, server.SetArmorClass).Methods("PUT")
 
 	// Player's abilities
-	player.HandleFunc("/"+name+"/abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
-	player.HandleFunc("/"+name+"/abilities", server.GetAbilities)
+	player.HandleFunc(playerName+"abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
+	player.HandleFunc(playerName+"abilities", server.GetAbilities)
 
 	// Player's skills
-	player.HandleFunc("/"+name+"/skills/"+skill, server.SetSkill).Methods("PUT")
-	player.HandleFunc("/"+name+"/skills", server.GetSkills)
+	player.HandleFunc(playerName+"skills/"+skill, server.SetSkill).Methods("PUT")
+	player.HandleFunc(playerName+"skills", server.GetSkills)
 
         // Player's saving throws
-        player.HandleFunc("/"+name+"/saving_throw/"+save, server.SetSave).Methods("PUT")
-        player.HandleFunc("/"+name+"/saving_throw", server.GetSaves)
+        player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods("PUT")
+        player.HandleFunc(playerName+"saving_throw", server.GetSaves)
 
 	srv := &http.Server{
 		Handler:      r,

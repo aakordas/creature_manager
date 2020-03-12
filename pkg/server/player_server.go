@@ -141,6 +141,7 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
+
 	_, err = playersCollection.InsertOne(ctx, entry)
 	if err != nil {
 		log.Println(err)
@@ -158,23 +159,46 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 type emptyResponse struct {
 }
 
+func getInfo(w http.ResponseWriter, r *http.Request, v interface{}) {
+        enc := json.NewEncoder(w)
+
+        player, err := getPlayer(w, r)
+        if err != nil {
+                sendErrorResponse(w, enc,
+                        "Could not fetch the player",
+                        "There was an error retrieving the player from the database.",
+                        http.StatusBadRequest,
+                )
+                return
+        }
+
+        w.WriteHeader(http.StatusFound)
+
+        var res interface{}
+        switch v.(type) {
+        case creature.Creature:
+                res = player
+        case abilities.Abilities:
+                res = player.Abilities
+        case skills.Skills:
+                res = player.Skills
+        case saves.SavingThrows:
+                res = player.SavingThrows
+        }
+
+        if res == nil {
+                jsonEncode(w, enc, emptyResponse{})
+                return
+        }
+
+        jsonEncode(w, enc, res)
+}
+
 // GetPlayer is the handler that returns the information about a player in the
 // database.
 func GetPlayer(w http.ResponseWriter, r *http.Request) {
-	enc := json.NewEncoder(w)
-
-	player, err := getPlayer(w, r)
-	if err != nil {
-		sendErrorResponse(w, enc,
-			"Could not fetch the player.",
-			"There was an error retrieving the player from the database.",
-			http.StatusBadRequest,
-		)
-		return
-	}
-
-	w.WriteHeader(http.StatusFound)
-	jsonEncode(w, enc, player)
+        var p creature.Creature
+        getInfo(w, r, p)
 }
 
 type missingPlayerError struct {
@@ -232,20 +256,8 @@ func getPlayer(w http.ResponseWriter, r *http.Request) (*creature.Creature, erro
 // GetAbilities is the handler that returns the abilities information of a
 // player in the database.
 func GetAbilities(w http.ResponseWriter, r *http.Request) {
-	enc := json.NewEncoder(w)
-
-	player, err := getPlayer(w, r)
-	if err != nil {
-		sendErrorResponse(w, enc,
-			"Could not fetch the player.",
-			"There was an error retrieving the player from the database.",
-			http.StatusBadRequest,
-		)
-		return
-	}
-
-	// w.WriteHeader(http.StatusFound)
-	jsonEncode(w, enc, player.Abilities)
+        var a abilities.Abilities
+	getInfo(w, r, a)
 }
 
 // validAbility checks if the provided value is a valid ability.
@@ -378,55 +390,16 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// playerExists checks if the player with the provided name exists in the database.
-func playerExists(w http.ResponseWriter, r *http.Request, col *mongo.Collection, playerName string) {
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-	defer cancel()
-
-	enc := json.NewEncoder(w)
-	findResult := findPlayer(ctx, col, playerName)
-	// Can this even happen?
-	if findResult == nil {
-		log.Println("Error in FindOne")
-		sendErrorResponse(w, enc, databaseError,
-			"An error was encountered while accessing the database.",
-			http.StatusInternalServerError,
-		)
-		return
-	} else if findResult.Err() == mongo.ErrNoDocuments {
-		w.WriteHeader(http.StatusNotFound)
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
-}
-
-// setCreatureAttribute sets the provided attribute to the provided value.
-func setCreatureAttribute(w http.ResponseWriter, r *http.Request, query bson.M) {
+// setNoUpsert sets the provided attribute to the provided value.
+func setNoUpsert(w http.ResponseWriter, r *http.Request, enc *json.Encoder, filter, update interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-
-	vars := mux.Vars(r)
-	playerName := vars["name"]
-	if playerName == "" {
-		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characteres and spaces.",
-			http.StatusBadRequest,
-		)
-		return
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
 
 	playersCollection := playersDatabase.Collection(players)
 
-	playerExists(w, r, playersCollection, playerName)
-
-	_, err := playersCollection.UpdateOne(ctx, bson.M{
-		"name": playerName,
-	}, bson.M{
-		"$set": query,
-	})
+	_, err := playersCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		log.Println(err)
 		sendErrorResponse(w, enc, databaseError,
@@ -442,22 +415,37 @@ func setCreatureAttribute(w http.ResponseWriter, r *http.Request, query bson.M) 
 // SetHitPoints is the handler that sets the hitpoints of the requested creature
 // to the provided value.
 func SetHitPoints(w http.ResponseWriter, r *http.Request) {
+        enc := json.NewEncoder(w)
+
 	vars := mux.Vars(r)
 	v := vars["number"]
 	value, err := strconv.Atoi(v)
 	if err != nil {
-		sendErrorResponse(
-			w,
-			json.NewEncoder(w),
+		sendErrorResponse( w, enc,
 			"invalid value",
 			"Please provide a valid numeric value.",
 			http.StatusBadRequest,
 		)
 	}
+	playerName := vars["name"]
+	if playerName == "" {
+		sendErrorResponse(w, enc, invalidPlayerNameError,
+			"A player's name should contain only characters and spaces.",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
-	setCreatureAttribute(w, r, bson.M{
-		"hitpoints": value,
-	})
+
+        f := bson.M{
+                "name": playerName,
+        }
+        u := bson.M{
+                "$set": bson.M{
+                        "hit_points": value,
+        }}
+
+	setNoUpsert(w, r, enc, f, u)
 }
 
 // SetLevel is the handler that sets the hitpoints of the requested creature to
@@ -469,9 +457,7 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 	v := vars["number"]
 	value, err := strconv.Atoi(v)
 	if err != nil {
-		sendErrorResponse(
-			w,
-			json.NewEncoder(w),
+		sendErrorResponse( w, enc,
 			"invalid value",
 			"Please provide a valid numeric value.",
 			http.StatusBadRequest,
@@ -497,62 +483,64 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 	}
 
 	proficiencyBonus := creature.ProficiencyBonusPerLevel[value]
-	setCreatureAttribute(w, r, bson.M{
-		"level":             value,
-		"proficiency_bonus": proficiencyBonus,
-		"passive_perception": calculatePassivePerception(
-			*player,
-			player.Abilities.Wisdom,
-			proficiencyBonus,
-		),
-	})
+
+        f := bson.M {
+                "name": playerName,
+        }
+        u := bson.M{
+                "$set": bson.M{
+                        "level": value,
+                        "proficiency_bonus": proficiencyBonus,
+                        "passive_perception": calculatePassivePerception(
+                                *player,
+                                player.Abilities.Wisdom,
+                                proficiencyBonus,
+                        ),
+        }}
+
+	setNoUpsert(w, r, enc, f, u)
 }
 
 // SetArmorClass is the handler that sets the armor class of the requested
 // creature to the provided value.
 func SetArmorClass(w http.ResponseWriter, r *http.Request) {
+        enc := json.NewEncoder(w)
+
 	vars := mux.Vars(r)
 	v := vars["number"]
 	value, err := strconv.Atoi(v)
 	if err != nil {
-		sendErrorResponse(
-			w,
-			json.NewEncoder(w),
+		sendErrorResponse( w, enc,
 			"invalid value",
 			"Please provide a valid numeric value.",
 			http.StatusBadRequest,
 		)
 	}
-
-	setCreatureAttribute(w, r, bson.M{
-		"armor_class": value,
-	})
-}
-
-// GetSkills is the handler that returns the skills information of a player in
-// the database.
-func GetSkills(w http.ResponseWriter, r *http.Request) {
-	enc := json.NewEncoder(w)
-
-	player, err := getPlayer(w, r)
-	if err != nil {
-		sendErrorResponse(w, enc,
-			"Could not fetch the player.",
-			"There was an error retrieving the player from the database.",
+	playerName := vars["name"]
+	if playerName == "" {
+		sendErrorResponse(w, enc, invalidPlayerNameError,
+			"A player's name should contain only characters and spaces.",
 			http.StatusBadRequest,
 		)
 		return
 	}
 
-	w.WriteHeader(http.StatusFound)
+        f := bson.M{
+                "name": playerName,
+        }
+        u := bson.M{
+                "$set": bson.M{
+                        "armor_class": value,
+        }}
 
-	if player.Skills == nil {
-		jsonEncode(w, enc, emptyResponse{})
-		return
-	}
+	setNoUpsert(w, r, enc, f, u)
+}
 
-	jsonEncode(w, enc, player.Skills)
-	return
+// GetSkills is the handler that returns the skills information of a player in
+// the database.
+func GetSkills(w http.ResponseWriter, r *http.Request) {
+        var s skills.Skills
+	getInfo(w, r, s)
 }
 
 // validSkill checks if the provided value is a valid skill.
@@ -570,11 +558,30 @@ func validSkill(s string) bool {
 	}
 }
 
+func setUpsert(w http.ResponseWriter, r *http.Request, enc *json.Encoder, filter, update interface{}) {
+        w.Header().Set("Content-Type", "application/json")
+
+        playersCollection := playersDatabase.Collection(players)
+
+        ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+        defer cancel()
+
+        opts := options.Update().SetUpsert(true)
+        _, err := playersCollection.UpdateOne(ctx, filter, update, opts)
+        if err != nil {
+                log.Println(err)
+                sendErrorResponse(w, enc, databaseError,
+                        "There was an error updating the entry in the database.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }
+}
+
 // SetSkill is the handler that sets the requested skill of a player to the
 // provided value.
 func SetSkill(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
+        enc := json.NewEncoder(w)
 
 	vars := mux.Vars(r)
 	playerName := vars["name"]
@@ -594,8 +601,6 @@ func SetSkill(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-
-	playersCollection := playersDatabase.Collection(players)
 
 	player, err := getPlayer(w, r)
 	if err != nil {
@@ -625,54 +630,24 @@ func SetSkill(w http.ResponseWriter, r *http.Request) {
 		modifier = player.CharismaModifier
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-	defer cancel()
-
-	opts := options.Update().SetUpsert(true)
-	_, err = playersCollection.UpdateOne(ctx, bson.M{
+	f := bson.M{
 		"name": playerName,
-	}, bson.M{
+	}
+        u := bson.M{
 		"$set": bson.M{
-			"skills." + skill: bson.M{
+			"skills." + skill : bson.M{
 				"value":    modifier + player.ProficiencyBonus,
 				"modifier": abilityModifier,
-			}}}, opts)
-	if err != nil {
-		log.Println(err)
-		sendErrorResponse(w, enc, databaseError,
-			"There was an error updating the entry in the database.",
-			http.StatusInternalServerError,
-		)
-		return
-	}
+	}}}
 
-	w.WriteHeader(http.StatusOK)
+        setUpsert(w, r, enc, f, u)
 }
 
 // GetSaves is the handler that returns the saving throws information of a
 // player in the database.
 func GetSaves(w http.ResponseWriter, r *http.Request) {
-        enc := json.NewEncoder(w)
-
-        player, err := getPlayer(w, r)
-        if err != nil {
-                sendErrorResponse(w, enc,
-                        "Could not fetch the player.",
-                        "There was an error retrieving the player from the database.",
-                        http.StatusBadRequest,
-                )
-                return
-        }
-
-        w.WriteHeader(http.StatusFound)
-
-        if player.SavingThrows == nil {
-                jsonEncode(w, enc, emptyResponse{})
-                return
-        }
-
-        jsonEncode(w, enc, player.SavingThrows)
-        return
+        var s saves.SavingThrows
+        getInfo(w, r, s)
 }
 
 // validSave checks if the provided value is a valid saving throw.
@@ -689,7 +664,6 @@ func validSave(s string) bool {
 // SetSave is the handler that sets the requested saving throw of a player in
 // the database.
 func SetSave(w http.ResponseWriter, r *http.Request) {
-        w.Header().Set("Content-Type", "application/json")
         enc := json.NewEncoder(w)
 
         vars := mux.Vars(r)
@@ -711,26 +685,13 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
                 return
         }
 
-        playersCollection := playersDatabase.Collection(players)
-
-        ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
-        defer cancel()
-
-        opts := options.Update().SetUpsert(true)
-        _, err := playersCollection.UpdateOne(ctx, bson.M{
+        f := bson.M{
                 "name": playerName,
-        }, bson.M{
-                "$set": bson.M {
-                        "saving_throws." + save: true,
-        }}, opts)
-        if err != nil {
-                log.Println(err)
-                sendErrorResponse(w, enc, databaseError,
-                        "There was an error updating the entry in the database.",
-                        http.StatusInternalServerError,
-                )
-                return
         }
+        u := bson.M{
+                "$set": bson.M{
+                        "saving_throws." + save: true,
+        }}
 
-        w.WriteHeader(http.StatusOK)
+        setUpsert(w, r, enc, f, u)
 }
