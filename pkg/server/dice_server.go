@@ -93,7 +93,7 @@ func unexpectedError(w http.ResponseWriter) {
 
 // Roll is the handler for all the requested rolls of one die.
 func Roll(w http.ResponseWriter, r *http.Request) {
-	sides := r.FormValue("number")
+	sides := r.FormValue("sides")
 	count := r.FormValue("count")
 
 	s := getSides(sides)
