@@ -27,10 +27,10 @@ type errorResponse struct {
 }
 
 // writeHeader writes the header of a valid response.
-func writeHeader(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-}
+// func writeHeader(w http.ResponseWriter) {
+// w.Header().Set("Content-Type", "application/json")
+// w.WriteHeader(http.StatusOK)
+// }
 
 // jsonEncode wraps the json.Encoder.Encode and error checking.
 func jsonEncode(w http.ResponseWriter, enc *json.Encoder, v interface{}) {
