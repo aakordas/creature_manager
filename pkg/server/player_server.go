@@ -34,9 +34,9 @@ var (
 )
 
 const (
-	serverError            = "server error"
-	databaseError          = "database error"
-	playerNotFoundError    = "player not found"
+	serverError   = "server error"
+	databaseError = "database error"
+	// playerNotFoundError    = "player not found"
 	invalidPlayerNameError = "invalid player name"
 )
 
@@ -194,6 +194,43 @@ func getInfo(w http.ResponseWriter, r *http.Request, v interface{}) {
 func GetPlayer(w http.ResponseWriter, r *http.Request) {
 	var p creature.Creature
 	getInfo(w, r, p)
+}
+
+// DeletePlayer is the handler that deletes the specified player document from
+// the database.
+func DeletePlayer(w http.ResponseWriter, r *http.Request) {
+	enc := json.NewEncoder(w)
+
+	vars := mux.Vars(r)
+	playerName := vars["name"]
+	if playerName == "" {
+		sendErrorResponse(w, enc, invalidPlayerNameError,
+			"A player's name should contain only characters and spaces.",
+			http.StatusBadRequest,
+		)
+		return
+	}
+
+	w.WriteHeader(http.StatusFound)
+
+	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
+	defer cancel()
+
+	playersCollection := playersDatabase.Collection("players")
+
+	_, err := playersCollection.DeleteOne(ctx, bson.M{
+		"name": playerName,
+	})
+	if err != nil {
+		log.Println(err)
+		sendErrorResponse(w, enc, databaseError,
+			"There was an error deleting the entry from the database",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 type missingPlayerError struct {

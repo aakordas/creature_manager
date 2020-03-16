@@ -21,7 +21,7 @@ var (
 	address         = "127.0.0.1:8080"
 	databaseAddress = "mongodb://127.0.0.1:27017" // MongoDB's default port.
 
-	sides  = "{sides:[0-9]+}"
+	sides   = "{sides:[0-9]+}"
 	dsides  = "{sides:[d|D][0-9]+}"
 	count   = "{count:[0-9]+}"
 	name    = "{name:[a-zA-Z ]+}"
@@ -41,37 +41,38 @@ func main() {
 
 	// Rolls
 	api.HandleFunc("/roll", server.Roll)
-	api.Queries("sides", sides, "count", count).HandlerFunc(server.Roll)
+	api.Queries("sides", sides, "count", count).HandlerFunc(server.Roll).Methods(http.MethodGet)
 
 	roll := api.PathPrefix("/roll/").Subrouter()
-	roll.HandleFunc("/"+dsides, server.RollN)
+	roll.HandleFunc("/"+dsides, server.RollN).Methods(http.MethodGet)
 
 	dRoll := roll.PathPrefix("/" + dsides + "/").Subrouter()
-	dRoll.HandleFunc("/"+count, server.DRollN)
+	dRoll.HandleFunc("/"+count, server.DRollN).Methods(http.MethodGet)
 	dRoll.Queries("count", count).HandlerFunc(server.RollN)
 
 	// Player
 	player := api.PathPrefix("/player").Subrouter()
-	player.HandleFunc("/"+name, server.AddPlayer).Methods("PUT")
-	player.HandleFunc("/"+name, server.GetPlayer)
+	player.HandleFunc("/"+name, server.AddPlayer).Methods(http.MethodPut)
+	player.HandleFunc("/"+name, server.GetPlayer).Methods(http.MethodGet)
+	player.HandleFunc("/"+name, server.DeletePlayer).Methods(http.MethodDelete)
 
 	// Cannot (?) create subrouters with variables, like `name'.
 	playerName := "/" + name + "/"
-	player.HandleFunc(playerName+"hitpoints/"+number, server.SetHitPoints).Methods("PUT")
-	player.HandleFunc(playerName+"level/"+number, server.SetLevel).Methods("PUT")
-	player.HandleFunc(playerName+"armor/"+number, server.SetArmorClass).Methods("PUT")
+	player.HandleFunc(playerName+"hitpoints/"+number, server.SetHitPoints).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"level/"+number, server.SetLevel).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"armor/"+number, server.SetArmorClass).Methods(http.MethodPut)
 
 	// Player's abilities
-	player.HandleFunc(playerName+"abilities/"+ability+"/"+number, server.SetAbility).Methods("PUT")
-	player.HandleFunc(playerName+"abilities", server.GetAbilities)
+	player.HandleFunc(playerName+"abilities/"+ability+"/"+number, server.SetAbility).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"abilities", server.GetAbilities).Methods(http.MethodGet)
 
 	// Player's skills
-	player.HandleFunc(playerName+"skills/"+skill, server.SetSkill).Methods("PUT")
-	player.HandleFunc(playerName+"skills", server.GetSkills)
+	player.HandleFunc(playerName+"skills/"+skill, server.SetSkill).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"skills", server.GetSkills).Methods(http.MethodGet)
 
 	// Player's saving throws
-	player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods("PUT")
-	player.HandleFunc(playerName+"saving_throw", server.GetSaves)
+	player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"saving_throw", server.GetSaves).Methods(http.MethodGet)
 
 	srv := &http.Server{
 		Handler:      r,
