@@ -71,8 +71,8 @@ func main() {
 	player.HandleFunc(playerName+"skills", server.GetSkills).Methods(http.MethodGet)
 
 	// Player's saving throws
-	player.HandleFunc(playerName+"saving_throw/"+save, server.SetSave).Methods(http.MethodPut)
-	player.HandleFunc(playerName+"saving_throw", server.GetSaves).Methods(http.MethodGet)
+	player.HandleFunc(playerName+"saving_throws/"+save, server.SetSave).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"saving_throws", server.GetSaves).Methods(http.MethodGet)
 
 	srv := &http.Server{
 		Handler:      r,
