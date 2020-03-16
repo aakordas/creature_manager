@@ -16,4 +16,4 @@ const (
 )
 
 // SavingThrows is the collection of saving throws the creature is proficient at.
-type SavingThrows map[string]bool
+type SavingThrows []string

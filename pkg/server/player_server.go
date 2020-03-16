@@ -719,8 +719,8 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
 		"name": playerName,
 	}
 	u := bson.M{
-		"$set": bson.M{
-			"saving_throws." + save: true,
+		"$push": bson.M{
+			"saving_throws": save,
 		}}
 
 	setUpsert(w, r, enc, f, u)
