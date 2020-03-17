@@ -723,13 +723,39 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	player, err := getPlayer(w, r)
+	if err != nil {
+		sendErrorResponse(w, enc,
+			"Could not fetch the player.",
+			err.Error(),
+			http.StatusBadRequest,
+		)
+		return
+	}
+
 	f := bson.M{
 		"name": playerName,
 	}
+
+        var modifier int
+        switch save {
+        case "strength":
+                modifier = player.StrengthModifier
+        case "dexterity":
+                modifier = player.DexterityModifier
+        case "constitution":
+                modifier = player.ConstitutionModifier
+        case "intelligence":
+                modifier = player.IntelligenceModifier
+        case "wisdom":
+                modifier = player.WisdomModifier
+        case "charisma":
+                modifier = player.CharismaModifier
+        }
 	u := bson.M{
-		"$push": bson.M{
-			"saving_throws": save,
-		}}
+		"$set": bson.M{
+			"saving_throws." + save: modifier + player.ProficiencyBonus,
+	}}
 
 	setUpsert(w, r, enc, f, u)
 }
