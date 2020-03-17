@@ -93,7 +93,7 @@ func AddPlayer(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
@@ -205,13 +205,11 @@ func DeletePlayer(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
 	}
-
-	w.WriteHeader(http.StatusFound)
 
 	ctx, cancel := context.WithTimeout(context.Background(), contextTimeout)
 	defer cancel()
@@ -230,7 +228,7 @@ func DeletePlayer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 }
 
 type missingPlayerError struct {
@@ -251,7 +249,7 @@ func getPlayer(w http.ResponseWriter, r *http.Request) (*creature.Creature, erro
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return nil, missingPlayerError{playerName}
@@ -326,7 +324,7 @@ func SetAbility(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
@@ -461,7 +459,7 @@ func SetHitPoints(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
@@ -557,7 +555,7 @@ func SetArmorClass(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
@@ -614,6 +612,8 @@ func setUpsert(w http.ResponseWriter, r *http.Request, enc *json.Encoder, filter
 		)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // SetSkill is the handler that sets the requested skill of a player to the
@@ -625,7 +625,7 @@ func SetSkill(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
@@ -708,7 +708,7 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
 	playerName := vars["name"]
 	if playerName == "" {
 		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
+			"A player's name should contain only characters.",
 			http.StatusBadRequest,
 		)
 		return
