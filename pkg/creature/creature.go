@@ -24,6 +24,12 @@ type Creature struct {
 	PassivePerception int `json:"passive_perception" bson:"passive_perception"` // FIXME: Include any other bonuses.
 }
 
+// minimumLevel indicates the minimum level a creature can have.
+const minimumLevel = 1
+
+// maximumLevel indicates the maximum level a creature can have.
+const maximumLevel = 20
+
 // ProficiencyBonusPerLevel maps a character level to the proficiency bonus.
 var ProficiencyBonusPerLevel = map[int]int{
 	1:  2,
@@ -46,4 +52,13 @@ var ProficiencyBonusPerLevel = map[int]int{
 	18: 6,
 	19: 6,
 	20: 6,
+}
+
+// OutOfRange checks whether the provided value is within the acceptable level range.
+func OutOfRange(v int) bool {
+        if v >= minimumLevel && v <= maximumLevel {
+                return false
+        }
+
+        return true
 }

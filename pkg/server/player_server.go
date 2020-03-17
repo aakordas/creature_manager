@@ -484,6 +484,14 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 
 	vars := mux.Vars(r)
+	playerName := vars["name"]
+	if playerName == "" {
+		sendErrorResponse(w, enc, invalidPlayerNameError,
+			"A player's name should contain only characters.",
+			http.StatusBadRequest,
+		)
+		return
+	}
 	v := vars["number"]
 	value, err := strconv.Atoi(v)
 	if err != nil {
@@ -493,14 +501,14 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 		)
 	}
-	playerName := vars["name"]
-	if playerName == "" {
-		sendErrorResponse(w, enc, invalidPlayerNameError,
-			"A player's name should contain only characters and spaces.",
-			http.StatusBadRequest,
-		)
-		return
-	}
+        if creature.OutOfRange(value) {
+                sendErrorResponse(w, enc,
+                        "level value out of range",
+                        "Plase provide a value within range.",
+                        http.StatusBadRequest,
+                )
+                return
+        }
 
 	player, err := getPlayer(w, r)
 	if err != nil {
