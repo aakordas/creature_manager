@@ -40,18 +40,22 @@ func jsonEncode(w http.ResponseWriter, enc *json.Encoder, v interface{}) {
 	}
 }
 
+type invalidDice struct {
+	error
+}
+
 // rollDice rolls the specified number of the specified dice.
-func rollDice(sides, count int) (result int) {
+func rollDice(sides, count int) (result int, err error) {
 	d := chooseDice(sides)
 	if d == nil {
-		return 0
+		return 0, invalidDice{}
 	}
 
 	for i := 0; i < count; i++ {
 		result += d()
 	}
 
-	return result
+	return result, nil
 }
 
 // getSides gets the integer value from the sides from the passed string.
@@ -82,15 +86,6 @@ func getCount(count string) int {
 	return c
 }
 
-func unexpectedError(w http.ResponseWriter) {
-	// TODO: Add some logging here, too?
-	http.Error(
-		w,
-		"The server might have encountered an error. Please try again.",
-		http.StatusInternalServerError,
-	)
-}
-
 // Roll is the handler for all the requested rolls of one die.
 func Roll(w http.ResponseWriter, r *http.Request) {
 	sides := r.FormValue("sides")
@@ -98,13 +93,19 @@ func Roll(w http.ResponseWriter, r *http.Request) {
 
 	s := getSides(sides)
 	if s == 0 {
-		unexpectedError(w)
+		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
 	c := getCount(count)
 	if c == 0 {
-		unexpectedError(w)
+		errResponse := errorResponse{"invalid count", "The number of dice requested is invalid."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
@@ -137,17 +138,19 @@ func chooseDice(sides int) dice.Dice {
 // response deals with the response part of the HTTP response, whether that is an error response or not.
 func response(w http.ResponseWriter, s, c int) {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 
-	result := rollDice(s, c)
-	enc := json.NewEncoder(w)
-	if result == 0 {
-		errorResponse := errorResponse{"invalid sides", "The dice requested is not available."}
-		jsonEncode(w, enc, errorResponse)
+	result, err := rollDice(s, c)
+	if err != nil {
+		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
 	response := rollResponse{c, s, result}
+	w.WriteHeader(http.StatusOK)
+	enc := json.NewEncoder(w)
 	jsonEncode(w, enc, response)
 }
 
@@ -158,15 +161,21 @@ func RollN(w http.ResponseWriter, r *http.Request) {
 	sides := vars["sides"]
 	count := r.FormValue("count")
 
-	s := getSides(sides[1:])
+	s := getSides(sides)
 	if s == 0 {
-		unexpectedError(w)
+		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
 	c := getCount(count)
 	if c == 0 {
-		unexpectedError(w)
+		errResponse := errorResponse{"invalid count", "The number of dice requested is invalid."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
@@ -180,16 +189,21 @@ func DRollN(w http.ResponseWriter, r *http.Request) {
 	sides := vars["sides"]
 	count := vars["count"]
 
-	s := getSides(sides[1:])
+	s := getSides(sides)
 	if s == 0 {
-		unexpectedError(w)
+		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 		return
 	}
 
 	c := getCount(count)
 	if c == 0 {
-		unexpectedError(w)
-		return
+		errResponse := errorResponse{"invalid count", "The number of dice requested is invalid."}
+		w.WriteHeader(http.StatusNotAcceptable)
+		enc := json.NewEncoder(w)
+		jsonEncode(w, enc, errResponse)
 	}
 
 	response(w, s, c)

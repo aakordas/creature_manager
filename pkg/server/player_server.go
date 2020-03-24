@@ -499,14 +499,14 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 		)
 	}
-        if creature.OutOfRange(value) {
-                sendErrorResponse(w, enc,
-                        "level value out of range",
-                        "Plase provide a value within range.",
-                        http.StatusBadRequest,
-                )
-                return
-        }
+	if creature.OutOfRange(value) {
+		sendErrorResponse(w, enc,
+			"level value out of range",
+			"Plase provide a value within range.",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
 	player, err := getPlayer(w, r)
 	if err != nil {
@@ -737,25 +737,25 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
 		"name": playerName,
 	}
 
-        var modifier int
-        switch save {
-        case "strength":
-                modifier = player.StrengthModifier
-        case "dexterity":
-                modifier = player.DexterityModifier
-        case "constitution":
-                modifier = player.ConstitutionModifier
-        case "intelligence":
-                modifier = player.IntelligenceModifier
-        case "wisdom":
-                modifier = player.WisdomModifier
-        case "charisma":
-                modifier = player.CharismaModifier
-        }
+	var modifier int
+	switch save {
+	case "strength":
+		modifier = player.StrengthModifier
+	case "dexterity":
+		modifier = player.DexterityModifier
+	case "constitution":
+		modifier = player.ConstitutionModifier
+	case "intelligence":
+		modifier = player.IntelligenceModifier
+	case "wisdom":
+		modifier = player.WisdomModifier
+	case "charisma":
+		modifier = player.CharismaModifier
+	}
 	u := bson.M{
 		"$set": bson.M{
 			"saving_throws." + save: modifier + player.ProficiencyBonus,
-	}}
+		}}
 
 	setUpsert(w, r, enc, f, u)
 }
