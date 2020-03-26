@@ -40,31 +40,44 @@ const (
 	invalidPlayerNameError = "invalid player name"
 )
 
-// Connect initializes the interface and connects an application to the provided
-// database.
-func Connect(db string) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(db))
-	if err != nil {
-		log.Fatal(err)
-	}
+// // playerRoutes properly initializes the routes for the player part of
+// // the server.
+func playerRoutes(r *mux.Router) *mux.Router {
+	var (
+		name    = "{name:[a-zA-Z ]+}"
+		number  = "{number:[0-9]+}"
+		ability = "{ability:[a-zA-Z]+}"
+		skill   = "{skill:[a-zA-Z_]+}"
+		save    = "{save:[a-zA-Z]+}"
+	)
 
-	// TODO: context.WithClose. Return the close function and pass it in Disconnect.
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	api := r.PathPrefix("/api/v1/").Subrouter()
 
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Player
+	player := api.PathPrefix("/player").Subrouter()
+	player.HandleFunc("/"+name, AddPlayer).Methods(http.MethodPut)
+	player.HandleFunc("/"+name, GetPlayer).Methods(http.MethodGet)
+	player.HandleFunc("/"+name, DeletePlayer).Methods(http.MethodDelete)
 
-	playersDatabase = client.Database(database)
-}
+	// Cannot (?) create subrouters with variables, like `name'.
+	playerName := "/" + name + "/"
+	player.HandleFunc(playerName+"hitpoints/"+number, SetHitPoints).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"level/"+number, SetLevel).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"armor/"+number, SetArmorClass).Methods(http.MethodPut)
 
-// Disconnect disconnecs the client from the database.
-func Disconnect() {
-	err := client.Disconnect(*dbContext)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Player's abilities
+	player.HandleFunc(playerName+"abilities/"+ability+"/"+number, SetAbility).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"abilities", GetAbilities).Methods(http.MethodGet)
+
+	// Player's skills
+	player.HandleFunc(playerName+"skills/"+skill, SetSkill).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"skills", GetSkills).Methods(http.MethodGet)
+
+	// Player's saving throws
+	player.HandleFunc(playerName+"saving_throws/"+save, SetSave).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"saving_throws", GetSaves).Methods(http.MethodGet)
+
+	return r
 }
 
 // sendErrorResponse creates and sends a custom error response.

@@ -15,6 +15,31 @@ import (
 
 // TODO: Testing for the functions that accept ResponseWriters and Requests.
 
+// diceRoutes properly initializes the routes for the dice part of
+// the server.
+func diceRoutes(r *mux.Router) *mux.Router {
+	var (
+		sides  = "{sides:[0-9]+}"
+		dsides = "{sides:[d|D][0-9]+}"
+		count  = "{count:[0-9]+}"
+	)
+
+	api := r.PathPrefix("/api/v1/").Subrouter()
+
+	// Rolls
+	api.HandleFunc("/roll", Roll)
+	api.Queries("sides", sides, "count", count).HandlerFunc(Roll).Methods(http.MethodGet)
+
+	roll := api.PathPrefix("/roll/").Subrouter()
+	roll.HandleFunc("/"+dsides, RollN).Methods(http.MethodGet)
+
+	dRoll := roll.PathPrefix("/" + dsides + "/").Subrouter()
+	dRoll.HandleFunc("/"+count, DRollN).Methods(http.MethodGet)
+	dRoll.Queries("count", count).HandlerFunc(RollN)
+
+	return r
+}
+
 type rollResponse struct {
 	Count  int `json:"count" bson:"count"`   // The number of dice that got rolled.
 	Sides  int `json:"sides" bson:"sides"`   // The number of sides each dice had.
