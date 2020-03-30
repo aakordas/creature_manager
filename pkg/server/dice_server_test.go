@@ -57,20 +57,41 @@ func TestRoll(t *testing.T) {
 	}
 }
 
+// TestRollN tests the RollN handler.
+func TestRollN(t *testing.T) {
+	type response struct {
+		Code int
+		Body string
 	}
 	tests := []struct {
 		name string
-		args args
-		want dice.Dice
+		args string
+		want response
 	}{
-		{"Valid sides", args{4}, dice.D4},
-		{"Invalid sides", args{5}, nil},
+		{"Valid roll", "/d4", response{http.StatusOK, `"sides":4`}},
+		{"Valid roll", "/D4", response{http.StatusOK, `"sides":4`}},
+		{"Invalid variable", "/d5", response{http.StatusNotAcceptable, `"error"`}},
+		{"Invalid variable", "/D5", response{http.StatusNotAcceptable, `"error"`}},
+		{"Valid query for count", "/d4?count=2", response{http.StatusOK, `"count":2,"sides":4`}},
+		{"Valid query for count", "/D4?count=2", response{http.StatusOK, `"count":2,"sides":4`}},
+		{"Invalid query for count", "/d4?count=0", response{http.StatusNotAcceptable, `"error"`}},
+		{"Invalid query for count", "/D4?count=0", response{http.StatusNotAcceptable, `"error"`}},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := chooseDice(tt.args.sides); &got == &tt.want {
-				t.Errorf("chooseDice() = %v, want %v", got, tt.want)
-			}
+			r := gofight.New()
+
+			r.GET("/api/v1/roll"+tt.args).
+				Run(router, func(r gofight.HTTPResponse, rq gofight.HTTPRequest) {
+					if r.Code != tt.want.Code {
+						t.Errorf("Handler returned wrong status code: got %v want %v", r.Code, tt.want.Code)
+					}
+
+					if !bytes.Contains(r.Body.Bytes(), []byte(tt.want.Body)) {
+						t.Errorf("Unexpected body returned.\ngot %v\nwant %v", r.Body, tt.want.Body)
+					}
+				})
 		})
 	}
 }

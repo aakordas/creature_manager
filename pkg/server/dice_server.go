@@ -186,7 +186,7 @@ func RollN(w http.ResponseWriter, r *http.Request) {
 	sides := vars["sides"]
 	count := r.FormValue("count")
 
-	s := getSides(sides)
+	s := getSides(sides[1:])
 	if s == 0 {
 		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
 		w.WriteHeader(http.StatusNotAcceptable)
