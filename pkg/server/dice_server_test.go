@@ -96,6 +96,46 @@ func TestRollN(t *testing.T) {
 	}
 }
 
+// TestDRollN TODO: NEEDS COMMENT INFO
+func TestDRollN(t *testing.T) {
+	type response struct {
+		Code int
+		Body string
+	}
+	tests := []struct {
+		name string
+		args string
+		want response
+	}{
+		{"Valid request", "/d4/1", response{http.StatusOK, `"count":1,"sides":4`}},
+		{"Valid request", "/D4/1", response{http.StatusOK, `"count":1,"sides":4`}},
+		{"Invalid dice variable", "/d5/1", response{http.StatusNotAcceptable, `"error"`}},
+		{"Invalid dice variable", "/D5/1", response{http.StatusNotAcceptable, `"error"`}},
+		{"Invalid count variable", "/d4/0", response{http.StatusNotAcceptable, `"error"`}},
+		{"Invalid count variable", "/D4/0", response{http.StatusNotAcceptable, `"error"`}},
+		// Not sure why count ocmes up first here, since the sides get parsed first in the code.
+		// Moreover, not sure if I should be looking specifically for it or just for an error.
+		{"Invalid dice and count variable", "/d5/0", response{http.StatusNotAcceptable, `"error":"invalid count"`}},
+		{"Invalid dice and count variable", "/D5/0", response{http.StatusNotAcceptable, `"error":"invalid count"`}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := gofight.New()
+
+			r.GET("/api/v1/roll"+tt.args).
+				Run(router, func(r gofight.HTTPResponse, rq gofight.HTTPRequest) {
+					if r.Code != tt.want.Code {
+						t.Errorf("Handler returned wrong status code: got %v want %v", r.Code, tt.want.Code)
+					}
+
+					if !bytes.Contains(r.Body.Bytes(), []byte(tt.want.Body)) {
+						t.Errorf("Unexpected body returned.\ngot %v\nwant %v", r.Body, tt.want.Body)
+					}
+				})
+		})
+	}
+}
+
 // TestMain TODO: NEEDS COMMENT INFO
 func TestMain(m *testing.M) {
 	var (

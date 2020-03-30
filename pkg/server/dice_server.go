@@ -214,7 +214,7 @@ func DRollN(w http.ResponseWriter, r *http.Request) {
 	sides := vars["sides"]
 	count := vars["count"]
 
-	s := getSides(sides)
+	s := getSides(sides[1:])
 	if s == 0 {
 		errResponse := errorResponse{"invalid sides", "The dice requested is not available."}
 		w.WriteHeader(http.StatusNotAcceptable)
@@ -229,6 +229,7 @@ func DRollN(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotAcceptable)
 		enc := json.NewEncoder(w)
 		jsonEncode(w, enc, errResponse)
+		return
 	}
 
 	response(w, s, c)
