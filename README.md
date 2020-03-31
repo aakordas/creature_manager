@@ -15,7 +15,7 @@ To install it type:
 
     go get -u github.com/aakordas/creature_manager
 
-The dependencies are, currently, GorillaMux and MongoDB.
+The dependencies are, currently, GorillaMux, MongoDB and gofight, for testing.
 
 ## Documentation
 
