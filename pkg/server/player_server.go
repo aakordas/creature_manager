@@ -40,31 +40,44 @@ const (
 	invalidPlayerNameError = "invalid player name"
 )
 
-// Connect initializes the interface and connects an application to the provided
-// database.
-func Connect(db string) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(db))
-	if err != nil {
-		log.Fatal(err)
-	}
+// // playerRoutes properly initializes the routes for the player part of
+// // the server.
+func playerRoutes(r *mux.Router) *mux.Router {
+	var (
+		name    = "{name:[a-zA-Z ]+}"
+		number  = "{number:[0-9]+}"
+		ability = "{ability:[a-zA-Z]+}"
+		skill   = "{skill:[a-zA-Z_]+}"
+		save    = "{save:[a-zA-Z]+}"
+	)
 
-	// TODO: context.WithClose. Return the close function and pass it in Disconnect.
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	api := r.PathPrefix("/api/v1/").Subrouter()
 
-	err = client.Connect(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Player
+	player := api.PathPrefix("/player").Subrouter()
+	player.HandleFunc("/"+name, AddPlayer).Methods(http.MethodPut)
+	player.HandleFunc("/"+name, GetPlayer).Methods(http.MethodGet)
+	player.HandleFunc("/"+name, DeletePlayer).Methods(http.MethodDelete)
 
-	playersDatabase = client.Database(database)
-}
+	// Cannot (?) create subrouters with variables, like `name'.
+	playerName := "/" + name + "/"
+	player.HandleFunc(playerName+"hitpoints/"+number, SetHitPoints).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"level/"+number, SetLevel).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"armor/"+number, SetArmorClass).Methods(http.MethodPut)
 
-// Disconnect disconnecs the client from the database.
-func Disconnect() {
-	err := client.Disconnect(*dbContext)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Player's abilities
+	player.HandleFunc(playerName+"abilities/"+ability+"/"+number, SetAbility).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"abilities", GetAbilities).Methods(http.MethodGet)
+
+	// Player's skills
+	player.HandleFunc(playerName+"skills/"+skill, SetSkill).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"skills", GetSkills).Methods(http.MethodGet)
+
+	// Player's saving throws
+	player.HandleFunc(playerName+"saving_throws/"+save, SetSave).Methods(http.MethodPut)
+	player.HandleFunc(playerName+"saving_throws", GetSaves).Methods(http.MethodGet)
+
+	return r
 }
 
 // sendErrorResponse creates and sends a custom error response.
@@ -499,14 +512,14 @@ func SetLevel(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest,
 		)
 	}
-        if creature.OutOfRange(value) {
-                sendErrorResponse(w, enc,
-                        "level value out of range",
-                        "Plase provide a value within range.",
-                        http.StatusBadRequest,
-                )
-                return
-        }
+	if creature.OutOfRange(value) {
+		sendErrorResponse(w, enc,
+			"level value out of range",
+			"Plase provide a value within range.",
+			http.StatusBadRequest,
+		)
+		return
+	}
 
 	player, err := getPlayer(w, r)
 	if err != nil {
@@ -737,25 +750,25 @@ func SetSave(w http.ResponseWriter, r *http.Request) {
 		"name": playerName,
 	}
 
-        var modifier int
-        switch save {
-        case "strength":
-                modifier = player.StrengthModifier
-        case "dexterity":
-                modifier = player.DexterityModifier
-        case "constitution":
-                modifier = player.ConstitutionModifier
-        case "intelligence":
-                modifier = player.IntelligenceModifier
-        case "wisdom":
-                modifier = player.WisdomModifier
-        case "charisma":
-                modifier = player.CharismaModifier
-        }
+	var modifier int
+	switch save {
+	case "strength":
+		modifier = player.StrengthModifier
+	case "dexterity":
+		modifier = player.DexterityModifier
+	case "constitution":
+		modifier = player.ConstitutionModifier
+	case "intelligence":
+		modifier = player.IntelligenceModifier
+	case "wisdom":
+		modifier = player.WisdomModifier
+	case "charisma":
+		modifier = player.CharismaModifier
+	}
 	u := bson.M{
 		"$set": bson.M{
 			"saving_throws." + save: modifier + player.ProficiencyBonus,
-	}}
+		}}
 
 	setUpsert(w, r, enc, f, u)
 }
